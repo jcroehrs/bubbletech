@@ -74,13 +74,13 @@ android.add_assets =
 android.add_jars =
 
 # (str) python-for-android branch to use
-p4a.branch = master
+p4a.branch = develop
 
 # (str) Specific p4a commit to use (before build isolation bug)
 # p4a.commit = abc123
 
 # (bool) Use local p4a instead of downloading
-# p4a.source_dir =
+p4a.source_dir = _p4a_vendor
 
 # (str) bootstrap to use (sdl2 for pygame)
 p4a.bootstrap = sdl2
