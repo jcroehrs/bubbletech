@@ -41,23 +41,24 @@ jobs:
 
       - name: Accept Android licenses
         run: |
-          # Run buildozer until SDK is downloaded (it will fail, that's OK)
+          # Run buildozer first to download cmdline-tools (it will fail on license)
           buildozer android debug 2>&1 || true
 
-          # Create license files to bypass interactive prompts
-          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
-          LICENSES_DIR="$SDK_DIR/licenses"
-          mkdir -p "$LICENSES_DIR"
+          # Find sdkmanager in the downloaded cmdline-tools
+          SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          CMDLINE_TOOLS="$SDK_ROOT/cmdline-tools/latest/bin"
 
-          # Accept all licenses by writing the accepted license hashes
-          # android-googledisplay-license
-          echo -e "\n8933bad161af4178b1167d1a76312767c93130d5e0b931f0b1e9f5e9a9b0b0f0" > "$LICENSES_DIR/android-sdk-license"
-          echo -e "\n8933bad161af4178b1167d1a76312767c93130d5e0b931f0b1e9f5e9a9b0b0f0" > "$LICENSES_DIR/android-sdk-preview-license"
-
-          # Accept using sdkmanager if available
-          if command -v sdkmanager &> /dev/null; then
-            yes | sdkmanager --licenses --sdk_root="$SDK_DIR" 2>/dev/null || true
+          # Accept all licenses if sdkmanager exists
+          if [ -f "$CMDLINE_TOOLS/sdkmanager" ]; then
+            yes | "$CMDLINE_TOOLS/sdkmanager" --licenses --sdk_root="$SDK_ROOT" 2>/dev/null || true
           fi
+
+          # Also write license files as fallback
+          mkdir -p "$SDK_ROOT/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$SDK_ROOT/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$SDK_ROOT/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> "$SDK_ROOT/licenses/android-sdk-license"
+          echo "8933bad161af4178b1167d1a76312767c93130d5" >> "$SDK_ROOT/licenses/android-sdk-preview-license"
 
       - name: Build APK
         run: buildozer android debug
