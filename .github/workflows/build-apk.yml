@@ -37,6 +37,8 @@ jobs:
       - name: Install buildozer and cython
         run: |
           pip install --upgrade pip
+          # Pin setuptools to version compatible with p4a isolated builds
+          pip install 'setuptools<70'
           pip install buildozer cython==3.0.8
 
       - name: Setup Android SDK and licenses

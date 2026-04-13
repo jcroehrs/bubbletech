@@ -23,7 +23,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,pygame,android,setuptools
+requirements = python3,pygame,android
 
 # (str) Supported orientation (landscape, sensorLandscape, portrait or all)
 orientation = landscape
