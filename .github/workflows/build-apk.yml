@@ -25,7 +25,10 @@ jobs:
           docker run -v ${{ github.workspace }}:/home/user/hostcwd \
             -e "CI=true" \
             kivy/buildozer \
-            android debug
+            bash -c '
+              yes | sdkmanager --licenses 2>/dev/null || true
+              buildozer android debug
+            '
         shell: bash
 
       - name: Upload APK artifact
