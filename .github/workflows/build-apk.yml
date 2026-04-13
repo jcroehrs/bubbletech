@@ -41,27 +41,38 @@ jobs:
           pip install 'cython<3.0'
           pip install 'buildozer==1.5.0'
 
-      - name: Install Android SDK command-line tools
+      - name: Setup Android SDK & cmdline-tools
         run: |
           SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
+
+          # 1. Descargar cmdline-tools de Google
           mkdir -p $SDK_DIR/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip
-          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools-extract
-          mv /tmp/cmdline-tools-extract/cmdline-tools $SDK_DIR/cmdline-tools/latest
-          rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-tools-extract
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-extract
+          mv /tmp/cmdline-extract/cmdline-tools $SDK_DIR/cmdline-tools/latest
 
-      - name: Accept Android SDK licenses
-        run: |
-          SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
-          $SDK_DIR/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=$SDK_DIR < /dev/null || true
+          # 2. Crear compatibilidad: buildozer busca en tools/bin/sdkmanager
+          #    pero la ruta real es cmdline-tools/latest/bin/sdkmanager
+          mkdir -p $SDK_DIR/tools/bin
+          ln -sf $SDK_DIR/cmdline-tools/latest/bin/sdkmanager $SDK_DIR/tools/bin/sdkmanager
+
+          # 3. Crear archivo de licencias aceptadas
           mkdir -p $SDK_DIR/licenses
           {
             echo "8933bad161af4178b1185d1a37fbf41ea5269c55"
             echo "d56f5187479451eabf01fb78af6dfcb131a6481e"
             echo "24333f8a63b6825ea9c5514f83c2829b004d1fee"
-            echo "504667f4c0de7af1a06de9e4bda8324a6bc5a8e3"
-            echo "48bc78e2beda406a4b6fd4b79e8d260aec5472c3"
           } > $SDK_DIR/licenses/android-sdk-license
+
+          # 4. Instalar platform-tools y build-tools con sdkmanager
+          yes | $SDK_DIR/cmdline-tools/latest/bin/sdkmanager \
+            --sdk_root=$SDK_DIR \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "platforms;android-34" || true
+
+          # Limpiar
+          rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-extract
 
       - name: Build APK
         run: buildozer android debug
