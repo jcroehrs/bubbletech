@@ -15,6 +15,9 @@ jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-22.04
+    env:
+      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+      PATH: /usr/lib/jvm/temurin-17-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     steps:
       - name: Checkout code
