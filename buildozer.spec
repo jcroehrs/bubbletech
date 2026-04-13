@@ -35,7 +35,7 @@ fullscreen = 1
 android.permissions = INTERNET
 
 # (int) Target Android API, should be as high as possible.
-android.api = 31
+android.api = 27
 
 # (int) Minimum API your APK will support.
 android.minapi = 21
@@ -74,7 +74,13 @@ android.add_assets =
 android.add_jars =
 
 # (str) python-for-android branch to use
-p4a.branch = develop
+p4a.branch = master
+
+# (str) Specific p4a commit to use (before build isolation bug)
+# p4a.commit = abc123
+
+# (bool) Use local p4a instead of downloading
+# p4a.source_dir =
 
 # (str) bootstrap to use (sdl2 for pygame)
 p4a.bootstrap = sdl2

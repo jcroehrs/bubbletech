@@ -14,7 +14,7 @@ env:
 jobs:
   build:
     name: Build Android APK
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout code
@@ -23,57 +23,32 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential git \
             autoconf automake libtool \
             python3-pip zip unzip wget curl \
-            openjdk-17-jdk-headless
+            openjdk-11-jdk-headless \
+            python3-distutils
 
-      - name: Install buildozer and cython
+      - name: Install buildozer
         run: |
           pip install --upgrade pip
-          # Pin setuptools to version compatible with p4a isolated builds
-          pip install 'setuptools<70'
-          pip install buildozer cython==3.0.8
-
-      - name: Setup Android SDK and licenses
-        run: |
-          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-
-          # Download Android command line tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
-          unzip -q /tmp/cmdline-tools.zip -d /tmp/
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          cp -r /tmp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
-
-          # Also create old-style tools structure for buildozer compatibility
-          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
-          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
-          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager" "$ANDROID_SDK_ROOT/tools/bin/avdmanager"
-
-          # Accept all licenses
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses --sdk_root="$ANDROID_SDK_ROOT" 2>/dev/null || true
-
-          # Install required SDK components
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
-            "platforms;android-31" \
-            "build-tools;31.0.0" \
-            "platform-tools" \
-            "ndk;25.2.9519653" \
-            --sdk_root="$ANDROID_SDK_ROOT" 2>/dev/null || true
+          pip install 'setuptools==65.5.0'
+          pip install 'cython<3.0'
+          pip install 'buildozer==1.5.0'
 
       - name: Build APK
-        run: buildozer android debug
-        env:
-          CI: "true"
-          ANDROID_SDK_ROOT: ${{ runner.home }}/.buildozer/android/platform/android-sdk
-          ANDROID_NDK_ROOT: ${{ runner.home }}/.buildozer/android/platform/android-ndk-r25b
+        run: |
+          buildozer -v android debug 2>&1 | tee buildozer.log || {
+            echo "=== FAILED - Last 100 lines ==="
+            tail -100 buildozer.log
+            exit 1
+          }
 
       - name: Upload APK artifact
         if: success()
@@ -82,15 +57,3 @@ jobs:
           name: BubbleTech-APK
           path: ${{ github.workspace }}/bin/*.apk
           if-no-files-found: error
-
-      - name: Create Release
-        if: github.event_name == 'push' && success()
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ github.run_number }}
-          name: Build ${{ github.run_number }}
-          files: ${{ github.workspace }}/bin/*.apk
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
