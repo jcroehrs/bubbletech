@@ -22,16 +22,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
-            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
-            libswscale-dev libavformat-dev libavcodec-dev \
+            build-essential git ffmpeg \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
             zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base \
-            openjdk-17-jdk-headless autoconf automake libtool \
+            autoconf automake libtool \
             python3-pip zip unzip wget curl
+          sudo apt-get install -y openjdk-17-jdk-headless || sudo apt-get install -y default-jdk-headless
 
       - name: Install buildozer and cython
         run: |
@@ -48,6 +49,7 @@ jobs:
         with:
           name: BubbleTech-APK
           path: bin/*.apk
+          if-no-files-found: error
 
       - name: Create Release
         if: github.event_name == 'push'
