@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     name: Build Android APK
@@ -29,9 +32,7 @@ jobs:
             build-essential git \
             autoconf automake libtool \
             python3-pip zip unzip wget curl \
-            openjdk-17-jdk-headless \
-            || { echo "=== APT ERROR DETAILS ===" && cat /var/log/apt/term.log && exit 1; }
-        shell: bash
+            openjdk-17-jdk-headless
 
       - name: Install buildozer and cython
         run: |
@@ -39,17 +40,23 @@ jobs:
           pip install buildozer cython==3.1.2
 
       - name: Build APK
-        run: |
-          echo "=== Starting buildozer ==="
-          buildozer android debug 2>&1 | tee buildozer.log || {
-            echo "=== BUILD FAILED - Last 200 lines ==="
-            tail -200 buildozer.log
-            exit 1
-          }
+        run: buildozer --verbose android debug
         env:
           CI: "true"
+          P4A_VERBOSE: "1"
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-error-log
+          path: |
+            buildozer.log
+            .buildozer/android/platform/python-for-android/pythonforandroid/bootstraps/
+          required: false
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: BubbleTech-APK
@@ -57,7 +64,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && success()
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
