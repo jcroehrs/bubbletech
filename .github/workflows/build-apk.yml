@@ -20,64 +20,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install system dependencies
+      - name: Build with Docker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git \
-            autoconf automake libtool \
-            python3-pip zip unzip wget curl \
-            openjdk-17-jdk-headless
-
-      - name: Install buildozer and cython
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython==3.1.2
-
-      - name: Accept Android licenses
-        run: |
-          # Run buildozer first to download cmdline-tools (it will fail on license)
-          buildozer android debug 2>&1 || true
-
-          # Find sdkmanager in the downloaded cmdline-tools
-          SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          CMDLINE_TOOLS="$SDK_ROOT/cmdline-tools/latest/bin"
-
-          # Accept all licenses if sdkmanager exists
-          if [ -f "$CMDLINE_TOOLS/sdkmanager" ]; then
-            yes | "$CMDLINE_TOOLS/sdkmanager" --licenses --sdk_root="$SDK_ROOT" 2>/dev/null || true
-          fi
-
-          # Also write license files as fallback
-          mkdir -p "$SDK_ROOT/licenses"
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$SDK_ROOT/licenses/android-sdk-license"
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$SDK_ROOT/licenses/android-sdk-license"
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> "$SDK_ROOT/licenses/android-sdk-license"
-          echo "8933bad161af4178b1167d1a76312767c93130d5" >> "$SDK_ROOT/licenses/android-sdk-preview-license"
-
-      - name: Build APK
-        run: buildozer android debug
-        env:
-          CI: "true"
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-error-log
-          path: buildozer.log
+          docker run -v ${{ github.workspace }}:/home/user/hostcwd \
+            -e "CI=true" \
+            kivy/buildozer \
+            android debug
+        shell: bash
 
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: BubbleTech-APK
-          path: bin/*.apk
+          path: ${{ github.workspace }}/bin/*.apk
           if-no-files-found: error
 
       - name: Create Release
@@ -86,7 +42,7 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           name: Build ${{ github.run_number }}
-          files: bin/*.apk
+          files: ${{ github.workspace }}/bin/*.apk
           draft: false
           prerelease: true
         env:
