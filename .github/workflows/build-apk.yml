@@ -39,21 +39,37 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==3.1.2
 
+      - name: Accept Android licenses
+        run: |
+          # Run buildozer until SDK is downloaded (it will fail, that's OK)
+          buildozer android debug 2>&1 || true
+
+          # Create license files to bypass interactive prompts
+          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
+          LICENSES_DIR="$SDK_DIR/licenses"
+          mkdir -p "$LICENSES_DIR"
+
+          # Accept all licenses by writing the accepted license hashes
+          # android-googledisplay-license
+          echo -e "\n8933bad161af4178b1167d1a76312767c93130d5e0b931f0b1e9f5e9a9b0b0f0" > "$LICENSES_DIR/android-sdk-license"
+          echo -e "\n8933bad161af4178b1167d1a76312767c93130d5e0b931f0b1e9f5e9a9b0b0f0" > "$LICENSES_DIR/android-sdk-preview-license"
+
+          # Accept using sdkmanager if available
+          if command -v sdkmanager &> /dev/null; then
+            yes | sdkmanager --licenses --sdk_root="$SDK_DIR" 2>/dev/null || true
+          fi
+
       - name: Build APK
-        run: buildozer --verbose android debug
+        run: buildozer android debug
         env:
           CI: "true"
-          P4A_VERBOSE: "1"
 
       - name: Upload build log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: buildozer-error-log
-          path: |
-            buildozer.log
-            .buildozer/android/platform/python-for-android/pythonforandroid/bootstraps/
-          required: false
+          path: buildozer.log
 
       - name: Upload APK artifact
         if: success()
