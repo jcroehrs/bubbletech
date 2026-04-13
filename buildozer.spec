@@ -21,6 +21,9 @@ source.include_exts = py,png,jpg,kv,atlas,json
 # (str) Application versioning (method)
 version = 0.1
 
+# (bool) Automatically accept Android SDK license agreements (for CI)
+android.accept_sdk_license = True
+
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
 requirements = python3,pygame,android
